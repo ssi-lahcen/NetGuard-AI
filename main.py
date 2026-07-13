@@ -20,7 +20,11 @@ def main():
 
     print("\nLogs loaded successfully.\n")
 
-    print(dataframe)
+    print(f"Total Log Entries : {len(dataframe)}")
+    print(f"Columns           : {len(dataframe.columns)}")
+    print(f"Source IPs        : {dataframe['src_ip'].nunique()}")
+    print(f"Destination IPs   : {dataframe['dst_ip'].nunique()}")
+    print(f"Protocols         : {', '.join(dataframe['protocol'].unique())}")
 
 
 if __name__ == "__main__":
