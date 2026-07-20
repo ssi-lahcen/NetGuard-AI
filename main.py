@@ -1,15 +1,17 @@
 """
 NetGuard-AI
-Main Entry Point
+
+Main entry point.
 """
 
 from config import LOG_FILE
 from modules.parser import parse_logs
+from modules.statistics import calculate_basic_statistics
 
 
 def main():
     """
-    Program entry point.
+    Start the NetGuard-AI application.
     """
 
     print("=" * 50)
@@ -20,13 +22,43 @@ def main():
 
     print("\nLogs loaded successfully.\n")
 
-    print(f"Total Log Entries : {len(dataframe)}")
-    print(f"Columns           : {len(dataframe.columns)}")
-    print(f"Source IPs        : {dataframe['src_ip'].nunique()}")
-    print(f"Destination IPs   : {dataframe['dst_ip'].nunique()}")
-    print(f"Protocols         : {', '.join(dataframe['protocol'].unique())}")
+    statistics = calculate_basic_statistics(
+        dataframe
+    )
+
+    print("NETWORK STATISTICS")
+    print("-" * 50)
+
+    print(
+        f"Total Events       : "
+        f"{statistics['total_events']}"
+    )
+
+    print(
+        f"Unique Source IPs  : "
+        f"{statistics['unique_source_ips']}"
+    )
+
+    print(
+        f"Unique Destination IPs: "
+        f"{statistics['unique_destination_ips']}"
+    )
+
+    print(
+        f"Unique Ports       : "
+        f"{statistics['unique_ports']}"
+    )
+
+    print(
+        f"Unique Protocols    : "
+        f"{statistics['unique_protocols']}"
+    )
+
+    print(
+        f"Total Bytes        : "
+        f"{statistics['total_bytes']}"
+    )
 
 
 if __name__ == "__main__":
     main()
-
