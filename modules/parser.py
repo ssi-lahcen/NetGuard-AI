@@ -4,7 +4,11 @@ NetGuard-AI
 Parser Module
 ==================================================
 
-Reads and validates network log files.
+Reads, validates, and cleans log files.
+
+Supported Schemas:
+    - network
+    - auth
 
 Author:
     Lahcen Elkadi
@@ -14,27 +18,56 @@ from pathlib import Path
 
 import pandas as pd
 
-REQUIRED_COLUMNS = [
-    "timestamp",
-    "src_ip",
-    "dst_ip",
-    "dst_port",
-    "protocol",
-    "bytes"
-]
+
+# ==================================================
+# Supported Schemas
+# ==================================================
+
+SCHEMAS = {
+
+    "network": [
+        "timestamp",
+        "src_ip",
+        "dst_ip",
+        "dst_port",
+        "protocol",
+        "bytes"
+    ],
+
+    "auth": [
+        "timestamp",
+        "src_ip",
+        "dst_ip",
+        "service",
+        "status",
+        "username"
+    ]
+}
 
 
-def validate_columns(dataframe: pd.DataFrame) -> None:
+# ==================================================
+# Validate Columns
+# ==================================================
+
+def validate_columns(
+    dataframe: pd.DataFrame,
+    schema: str
+) -> None:
     """
     Verify that all required columns exist.
-
-    Raises:
-        ValueError
     """
+
+    if schema not in SCHEMAS:
+
+        raise ValueError(
+            f"Unknown schema: {schema}"
+        )
+
+    required_columns = SCHEMAS[schema]
 
     missing_columns = []
 
-    for column in REQUIRED_COLUMNS:
+    for column in required_columns:
 
         if column not in dataframe.columns:
 
@@ -46,9 +79,16 @@ def validate_columns(dataframe: pd.DataFrame) -> None:
             f"Missing required columns: {missing_columns}"
         )
 
+    print("Column validation successful.")
+
+
+# ==================================================
+# Convert Data Types
+# ==================================================
 
 def convert_data_types(
-    dataframe: pd.DataFrame
+    dataframe: pd.DataFrame,
+    schema: str
 ) -> pd.DataFrame:
     """
     Convert columns into appropriate data types.
@@ -59,21 +99,28 @@ def convert_data_types(
         errors="coerce"
     )
 
-    dataframe["dst_port"] = pd.to_numeric(
-        dataframe["dst_port"],
-        errors="coerce"
-    )
+    if schema == "network":
 
-    dataframe["bytes"] = pd.to_numeric(
-        dataframe["bytes"],
-        errors="coerce"
-    )
+        dataframe["dst_port"] = pd.to_numeric(
+            dataframe["dst_port"],
+            errors="coerce"
+        )
+
+        dataframe["bytes"] = pd.to_numeric(
+            dataframe["bytes"],
+            errors="coerce"
+        )
 
     return dataframe
 
 
+# ==================================================
+# Remove Invalid Rows
+# ==================================================
+
 def remove_invalid_rows(
-    dataframe: pd.DataFrame
+    dataframe: pd.DataFrame,
+    schema: str
 ) -> pd.DataFrame:
     """
     Remove rows containing invalid values.
@@ -81,7 +128,31 @@ def remove_invalid_rows(
 
     before = len(dataframe)
 
-    dataframe = dataframe.dropna()
+    if schema == "network":
+
+        dataframe = dataframe.dropna(
+            subset=[
+                "timestamp",
+                "src_ip",
+                "dst_ip",
+                "dst_port",
+                "protocol",
+                "bytes"
+            ]
+        )
+
+    elif schema == "auth":
+
+        dataframe = dataframe.dropna(
+            subset=[
+                "timestamp",
+                "src_ip",
+                "dst_ip",
+                "service",
+                "status",
+                "username"
+            ]
+        )
 
     removed = before - len(dataframe)
 
@@ -92,11 +163,29 @@ def remove_invalid_rows(
     return dataframe
 
 
+# ==================================================
+# Parse Logs
+# ==================================================
+
 def parse_logs(
-    log_file: str
+    log_file: str,
+    schema: str = "network"
 ) -> pd.DataFrame:
     """
-    Read and validate a CSV log file.
+    Read, validate, clean, and return a log file.
+
+    Parameters
+    ----------
+    log_file : str
+        Path to the CSV file.
+
+    schema : str
+        Log schema ("network" or "auth").
+
+    Returns
+    -------
+    pandas.DataFrame
+        Cleaned dataframe.
     """
 
     log_path = Path(log_file)
@@ -109,16 +198,19 @@ def parse_logs(
 
     dataframe = pd.read_csv(log_path)
 
-    validate_columns(dataframe)
-
-    print("Column validation successful.")
+    validate_columns(
+        dataframe,
+        schema
+    )
 
     dataframe = convert_data_types(
-        dataframe
+        dataframe,
+        schema
     )
 
     dataframe = remove_invalid_rows(
-        dataframe
+        dataframe,
+        schema
     )
 
     return dataframe
