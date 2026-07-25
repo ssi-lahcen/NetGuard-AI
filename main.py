@@ -1,7 +1,33 @@
 """
+==================================================
 NetGuard-AI
+Main Application
+==================================================
 
-Main entry point.
+Author : Lahcen Elkadi
+Description:
+    Main entry point for NetGuard-AI.
+
+Workflow:
+
+1. Load network logs
+2. Parse and validate logs
+3. Build network statistics
+4. Display statistics
+5. Detect port scans
+6. Display alerts
+
+Future modules:
+
+- Brute Force Detection
+- DNS Tunneling Detection
+- Beaconing Detection
+- Threat Intelligence
+- GeoIP
+- Machine Learning
+- Reporting
+- Dashboard
+==================================================
 """
 
 from config import LOG_FILE
@@ -12,111 +38,148 @@ from modules.statistics import (
     build_network_profile,
 )
 
+from modules.port_scan import (
+    detect_port_scans,
+)
+
+
+# ==================================================
+# Display Network Statistics
+# ==================================================
+
+def display_statistics(profile):
+    """
+    Display network statistics.
+    """
+
+    basic = profile["basic_statistics"]
+
+    top_talkers = profile["top_talkers"]
+
+    top_ports = profile["top_ports"]
+
+    protocols = profile["protocol_distribution"]
+
+    print("\nNETWORK STATISTICS")
+    print("-" * 50)
+
+    print(f"Total Events            : {basic['total_events']}")
+    print(f"Unique Source IPs       : {basic['unique_source_ips']}")
+    print(f"Unique Destination IPs  : {basic['unique_destination_ips']}")
+    print(f"Unique Ports            : {basic['unique_ports']}")
+    print(f"Unique Protocols        : {basic['unique_protocols']}")
+    print(f"Total Bytes             : {basic['total_bytes']}")
+
+    print("\nTOP TALKERS")
+    print("-" * 50)
+
+    for ip, events in top_talkers.items():
+
+        print(f"{ip:<20} {events} events")
+
+    print("\nTOP DESTINATION PORTS")
+    print("-" * 50)
+
+    for port, events in top_ports.items():
+
+        print(f"Port {port:<15} {events} events")
+
+    print("\nPROTOCOL DISTRIBUTION")
+    print("-" * 50)
+
+    for protocol, events in protocols.items():
+        print(f"{protocol:<20} {events} events")
+    
+    print("\nTOP DESTINATION IPS")
+    print("-" * 50)
+    for ip, events in profile["top_destinations"].items():
+	    print(f"{ip:<20} {events} events")
+    
+    print("\nTRAFFIC BY PROTOCOL")
+    print("-" * 50)
+    for protocol, total_bytes in profile["bytes_per_protocol"].items():
+    	print(f"{protocol:<20} {total_bytes} bytes")
+# ==================================================
+# Display Port Scan Alerts
+# ==================================================
+
+def display_port_scan_alerts(alerts):
+    """
+    Display Port Scan alerts.
+    """
+
+    print()
+    print("=" * 50)
+    print("PORT SCAN DETECTION")
+    print("=" * 50)
+
+    if not alerts:
+
+        print("No port scan detected.")
+        return
+
+    for index, alert in enumerate(alerts, start=1):
+
+        print()
+        print(f"Alert #{index}")
+        print("-" * 50)
+
+        print(f"Alert Type      : {alert['alert_type']}")
+        print(f"Source IP       : {alert['source_ip']}")
+        print(f"Destination IP  : {alert['destination_ip']}")
+        print(f"Unique Ports    : {alert['unique_ports']}")
+        print(f"Risk Level      : {alert['risk']}")
+
+        ports = ", ".join(
+            map(str, alert["ports"])
+        )
+
+        print(f"Ports           : {ports}")
+
+
+# ==================================================
+# Main
+# ==================================================
 
 def main():
     """
-    Start the NetGuard-AI application.
+    NetGuard-AI main workflow.
     """
 
     print("=" * 50)
     print("NetGuard-AI")
     print("=" * 50)
 
+    # ------------------------------------------
+    # Load Logs
+    # ------------------------------------------
+
     dataframe = parse_logs(LOG_FILE)
 
-    print("\nLogs loaded successfully.\n")
+    print("\nLogs loaded successfully.")
+
+    # ------------------------------------------
+    # Statistics
+    # ------------------------------------------
 
     network_profile = build_network_profile(
         dataframe
     )
 
-    basic_statistics = (
-        network_profile["basic_statistics"]
-    )
+    display_statistics(network_profile)
 
-    top_talkers = (
-        network_profile["top_talkers"]
-    )
+    # ------------------------------------------
+    # Port Scan Detection
+    # ------------------------------------------
 
-    top_ports = (
-        network_profile["top_ports"]
-    )
+    alerts = detect_port_scans(dataframe)
 
-    protocol_distribution = (
-        network_profile[
-            "protocol_distribution"
-        ]
-    )
+    display_port_scan_alerts(alerts)
 
-    print("NETWORK STATISTICS")
-    print("-" * 50)
 
-    print(
-        f"Total Events       : "
-        f"{basic_statistics['total_events']}"
-    )
-
-    print(
-        f"Unique Source IPs  : "
-        f"{basic_statistics['unique_source_ips']}"
-    )
-
-    print(
-        f"Unique Destination IPs: "
-        f"{basic_statistics['unique_destination_ips']}"
-    )
-
-    print(
-        f"Unique Ports       : "
-        f"{basic_statistics['unique_ports']}"
-    )
-
-    print(
-        f"Unique Protocols    : "
-        f"{basic_statistics['unique_protocols']}"
-    )
-
-    print(
-        f"Total Bytes        : "
-        f"{basic_statistics['total_bytes']}"
-    )
-
-    print("\nTOP TALKERS")
-    print("-" * 50)
-
-    for ip_address, event_count in (
-        top_talkers.items()
-    ):
-
-        print(
-            f"{ip_address:<20}"
-            f"{event_count} events"
-        )
-
-    print("\nTOP DESTINATION PORTS")
-    print("-" * 50)
-
-    for port, event_count in (
-        top_ports.items()
-    ):
-
-        print(
-            f"Port {port:<15}"
-            f"{event_count} events"
-        )
-
-    print("\nPROTOCOL DISTRIBUTION")
-    print("-" * 50)
-
-    for protocol, event_count in (
-        protocol_distribution.items()
-    ):
-
-        print(
-            f"{protocol:<20}"
-            f"{event_count} events"
-        )
-
+# ==================================================
+# Program Entry
+# ==================================================
 
 if __name__ == "__main__":
     main()

@@ -1,14 +1,18 @@
 """
-parser.py
+==================================================
+NetGuard-AI
+Parser Module
+==================================================
 
-Responsible for loading, validating,
-cleaning, and preparing network logs.
+Reads and validates network log files.
+
+Author:
+    Lahcen Elkadi
 """
 
-import ipaddress
+from pathlib import Path
 
 import pandas as pd
-
 
 REQUIRED_COLUMNS = [
     "timestamp",
@@ -16,36 +20,16 @@ REQUIRED_COLUMNS = [
     "dst_ip",
     "dst_port",
     "protocol",
-    "action",
-    "bytes",
+    "bytes"
 ]
 
 
-def load_logs(file_path):
+def validate_columns(dataframe: pd.DataFrame) -> None:
     """
-    Load network logs from a CSV file.
+    Verify that all required columns exist.
 
-    Args:
-        file_path (str): Path to the CSV file.
-
-    Returns:
-        pandas.DataFrame: Loaded logs.
-    """
-
-    try:
-        dataframe = pd.read_csv(file_path)
-
-    except FileNotFoundError:
-        raise FileNotFoundError(
-            f"Log file not found: {file_path}"
-        )
-
-    return dataframe
-
-
-def validate_columns(dataframe):
-    """
-    Validate the required columns.
+    Raises:
+        ValueError
     """
 
     missing_columns = []
@@ -53,124 +37,88 @@ def validate_columns(dataframe):
     for column in REQUIRED_COLUMNS:
 
         if column not in dataframe.columns:
+
             missing_columns.append(column)
 
     if missing_columns:
+
         raise ValueError(
-            "Missing required columns: "
-            f"{', '.join(missing_columns)}"
+            f"Missing required columns: {missing_columns}"
         )
 
-    print("Column validation successful.")
 
-
-def convert_timestamps(dataframe):
+def convert_data_types(
+    dataframe: pd.DataFrame
+) -> pd.DataFrame:
     """
-    Convert timestamps into datetime objects.
+    Convert columns into appropriate data types.
     """
 
     dataframe["timestamp"] = pd.to_datetime(
         dataframe["timestamp"],
-        errors="coerce",
+        errors="coerce"
+    )
+
+    dataframe["dst_port"] = pd.to_numeric(
+        dataframe["dst_port"],
+        errors="coerce"
+    )
+
+    dataframe["bytes"] = pd.to_numeric(
+        dataframe["bytes"],
+        errors="coerce"
     )
 
     return dataframe
 
 
-def validate_ip(ip_address):
+def remove_invalid_rows(
+    dataframe: pd.DataFrame
+) -> pd.DataFrame:
     """
-    Validate an IPv4 or IPv6 address.
-
-    Returns:
-        bool: True if valid, False otherwise.
-    """
-
-    try:
-        ipaddress.ip_address(ip_address)
-        return True
-
-    except ValueError:
-        return False
-
-
-def validate_network_data(dataframe):
-    """
-    Validate IP addresses and network values.
-    """
-
-    invalid_source_ips = ~dataframe["src_ip"].apply(
-        validate_ip
-    )
-
-    invalid_destination_ips = ~dataframe["dst_ip"].apply(
-        validate_ip
-    )
-
-    invalid_ports = (
-        (dataframe["dst_port"] < 1)
-        | (dataframe["dst_port"] > 65535)
-    )
-
-    invalid_bytes = dataframe["bytes"] < 0
-
-    invalid_rows = (
-        invalid_source_ips
-        | invalid_destination_ips
-        | invalid_ports
-        | invalid_bytes
-    )
-
-    invalid_count = invalid_rows.sum()
-
-    if invalid_count > 0:
-
-        print(
-            f"Warning: {invalid_count} invalid "
-            "network rows detected."
-        )
-
-    return dataframe[~invalid_rows]
-
-
-def clean_data(dataframe):
-    """
-    Remove missing and duplicate rows.
+    Remove rows containing invalid values.
     """
 
     before = len(dataframe)
 
     dataframe = dataframe.dropna()
 
-    dataframe = dataframe.drop_duplicates()
-
-    dataframe = dataframe.dropna(
-        subset=["timestamp"]
-    )
-
-    after = len(dataframe)
-
-    removed_rows = before - after
+    removed = before - len(dataframe)
 
     print(
-        f"Removed {removed_rows} invalid rows."
+        f"Removed {removed} invalid rows."
     )
 
     return dataframe
 
 
-def parse_logs(file_path):
+def parse_logs(
+    log_file: str
+) -> pd.DataFrame:
     """
-    Execute the complete log processing pipeline.
+    Read and validate a CSV log file.
     """
 
-    dataframe = load_logs(file_path)
+    log_path = Path(log_file)
+
+    if not log_path.exists():
+
+        raise FileNotFoundError(
+            f"File not found: {log_file}"
+        )
+
+    dataframe = pd.read_csv(log_path)
 
     validate_columns(dataframe)
 
-    dataframe = convert_timestamps(dataframe)
+    print("Column validation successful.")
 
-    dataframe = validate_network_data(dataframe)
+    dataframe = convert_data_types(
+        dataframe
+    )
 
-    dataframe = clean_data(dataframe)
+    dataframe = remove_invalid_rows(
+        dataframe
+    )
 
     return dataframe
