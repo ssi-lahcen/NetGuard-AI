@@ -32,3 +32,15 @@ TIME_WINDOW_SECONDS = 60
 LOW_RISK_PORTS = 5
 MEDIUM_RISK_PORTS = 10
 HIGH_RISK_PORTS = 20
+
+# ==================================================
+# Brute Force Detection
+# ==================================================
+
+BRUTE_FORCE_THRESHOLD = 5
+
+BRUTE_FORCE_TIME_WINDOW = 60  # seconds
+
+CRITICAL_ATTEMPTS = 20
+
+HIGH_ATTEMPTS = 10
