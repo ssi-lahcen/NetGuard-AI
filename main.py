@@ -30,7 +30,13 @@ Future modules:
 ==================================================
 """
 
-from config import LOG_FILE
+from config import (
+    NETWORK_LOG_FILE,
+    AUTH_LOG_FILE,
+)
+from modules.brute_force import (
+    detect_brute_force,
+)
 
 from modules.parser import parse_logs
 
@@ -136,7 +142,30 @@ def display_port_scan_alerts(alerts):
 
         print(f"Ports           : {ports}")
 
+def display_brute_force_alerts(alerts):
+    print("=" * 50)
+    print("BRUTE FORCE DETECTION")
+    print("=" * 50)
 
+    if not alerts:
+        print("No brute force attack detected.")
+        return
+
+    for index, alert in enumerate(alerts, start=1):
+
+        print()
+        print(f"Alert #{index}")
+        print("-" * 50)
+
+        print(f"Source IP       : {alert['source_ip']}")
+        print(f"Destination IP  : {alert['destination_ip']}")
+        print(f"Service         : {alert['service']}")
+        print(f"Failed Attempts : {alert['failed_attempts']}")
+        print(f"Compromised     : {alert['successful_login']}")
+        print(f"Risk Level      : {alert['risk']}")
+        print(f"First Attempt   : {alert['first_attempt']}")
+        print(f"Last Attempt    : {alert['last_attempt']}")
+        print(f"Duration        : {alert['duration_seconds']} seconds")
 # ==================================================
 # Main
 # ==================================================
@@ -154,8 +183,10 @@ def main():
     # Load Logs
     # ------------------------------------------
 
-    dataframe = parse_logs(LOG_FILE)
-
+    network_dataframe = parse_logs(
+    NETWORK_LOG_FILE,
+    schema="network"
+    )
     print("\nLogs loaded successfully.")
 
     # ------------------------------------------
@@ -163,7 +194,7 @@ def main():
     # ------------------------------------------
 
     network_profile = build_network_profile(
-        dataframe
+        network_dataframe
     )
 
     display_statistics(network_profile)
@@ -172,9 +203,29 @@ def main():
     # Port Scan Detection
     # ------------------------------------------
 
-    alerts = detect_port_scans(dataframe)
+    alerts = detect_port_scans(
+        network_dataframe
+    )
 
     display_port_scan_alerts(alerts)
+
+    # ==================================================
+    # Authentication Log Analysis
+    # ==================================================
+    print()
+    print("=" * 50)
+    print("AUTHENTICATION ANALYSIS")
+    print("=" * 50)
+    auth_dataframe = parse_logs(
+        AUTH_LOG_FILE,
+        schema="auth"
+    )
+    brute_force_alerts = detect_brute_force(
+        auth_dataframe
+    )
+    display_brute_force_alerts(
+        brute_force_alerts
+    )
 
 
 # ==================================================
