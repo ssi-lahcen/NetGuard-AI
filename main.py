@@ -31,9 +31,14 @@ Future modules:
 """
 
 from config import (
+    LOG_FILE,
     NETWORK_LOG_FILE,
     AUTH_LOG_FILE,
 )
+from modules.dns_tunneling import (
+    detect_dns_tunneling,
+)
+
 from modules.brute_force import (
     detect_brute_force,
 )
@@ -142,6 +147,43 @@ def display_port_scan_alerts(alerts):
 
         print(f"Ports           : {ports}")
 
+# ==================================================
+# Display DNS Tunneling Alerts
+# ==================================================
+
+def display_dns_alerts(alerts):
+    """
+    Display DNS tunneling alerts.
+    """
+
+    print()
+    print("=" * 50)
+    print("DNS TUNNELING DETECTION")
+    print("=" * 50)
+
+    if not alerts:
+
+        print("No DNS tunneling detected.")
+        return
+
+    for index, alert in enumerate(alerts, start=1):
+
+        print()
+        print(f"Alert #{index}")
+        print("-" * 50)
+
+        print(f"Source IP       : {alert['source_ip']}")
+        print(f"DNS Requests    : {alert['query_count']}")
+        print(f"Longest Query   : {alert['longest_query']} characters")
+        print(f"Risk Level      : {alert['risk']}")
+
+        print("\nSuspicious Queries:")
+
+        for query in alert["suspicious_queries"]:
+
+            print(f"  - {query}")
+        print()
+
 def display_brute_force_alerts(alerts):
     print("=" * 50)
     print("BRUTE FORCE DETECTION")
@@ -226,8 +268,24 @@ def main():
     display_brute_force_alerts(
         brute_force_alerts
     )
+    # ------------------------------------------
+    # DNS Analysis
+    # ------------------------------------------
+    print()
+    print("=" * 50)
+    print("DNS ANALYSIS")
+    print("=" * 50)
 
-
+    dns_dataframe = parse_logs(
+        "logs/dns_logs.csv",
+        schema="dns"
+    )
+    dns_alerts = detect_dns_tunneling(
+        dns_dataframe
+    )
+    display_dns_alerts(
+        dns_alerts
+    )
 # ==================================================
 # Program Entry
 # ==================================================

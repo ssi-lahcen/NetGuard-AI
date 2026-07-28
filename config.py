@@ -62,3 +62,11 @@ BRUTE_FORCE_TIME_WINDOW = 60
 HIGH_ATTEMPTS = 10
 
 CRITICAL_ATTEMPTS = 20
+
+# ==================================================
+# DNS Tunneling Detection
+# ==================================================
+
+DNS_QUERY_LENGTH_THRESHOLD = 50
+
+DNS_REQUEST_THRESHOLD = 5

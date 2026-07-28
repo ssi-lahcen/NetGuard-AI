@@ -41,7 +41,17 @@ SCHEMAS = {
         "service",
         "status",
         "username"
+    ],
+
+    "dns": [
+        "timestamp",
+        "src_ip",
+        "dst_ip",
+        "query",
+        "record_type",
+        "response_size"
     ]
+
 }
 
 
@@ -108,6 +118,11 @@ def convert_data_types(
 
         dataframe["bytes"] = pd.to_numeric(
             dataframe["bytes"],
+            errors="coerce"
+        )
+    elif schema == "dns":
+        dataframe["response_size"] = pd.to_numeric(
+            dataframe["response_size"],
             errors="coerce"
         )
 
