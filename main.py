@@ -29,6 +29,14 @@ Future modules:
 - Dashboard
 ==================================================
 """
+from modules.beaconing import (
+    detect_beaconing,
+)
+from config import (
+    LOG_FILE,
+    AUTH_LOG_FILE,
+    BEACON_LOG_FILE,
+)
 
 from config import (
     LOG_FILE,
@@ -208,6 +216,34 @@ def display_brute_force_alerts(alerts):
         print(f"First Attempt   : {alert['first_attempt']}")
         print(f"Last Attempt    : {alert['last_attempt']}")
         print(f"Duration        : {alert['duration_seconds']} seconds")
+
+
+def display_beaconing_alerts(alerts):
+    """
+    Display Beaconing Detection alerts.
+    """
+
+    print()
+    print("=" * 50)
+    print("BEACONING DETECTION")
+    print("=" * 50)
+
+    if not alerts:
+        print("No beaconing detected.")
+        return
+
+    for index, alert in enumerate(alerts, start=1):
+
+        print()
+        print(f"Alert #{index}")
+        print("-" * 50)
+
+        print(f"Source IP         : {alert['source_ip']}")
+        print(f"Destination IP    : {alert['destination_ip']}")
+        print(f"Events            : {alert['events']}")
+        print(f"Average Interval  : {alert['average_interval']} seconds")
+        print(f"Std Deviation     : {alert['std_deviation']}")
+        print(f"Risk Level        : {alert['risk']}")
 # ==================================================
 # Main
 # ==================================================
@@ -285,6 +321,26 @@ def main():
     )
     display_dns_alerts(
         dns_alerts
+    )
+
+    # ------------------------------------------
+    # Beaconing Detection
+    # ------------------------------------------
+
+    print()
+    print("=" * 50)
+    print("BEACONING ANALYSIS")
+    print("=" * 50)
+
+    beacon_dataframe = parse_logs(
+        BEACON_LOG_FILE,
+        schema="beacon"
+    )
+    beacon_alerts = detect_beaconing(
+        beacon_dataframe
+    )
+    display_beaconing_alerts(
+        beacon_alerts
     )
 # ==================================================
 # Program Entry

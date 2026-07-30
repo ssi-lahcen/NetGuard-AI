@@ -50,6 +50,14 @@ SCHEMAS = {
         "query",
         "record_type",
         "response_size"
+    ],
+
+    "beacon": [
+    "timestamp",
+    "src_ip",
+    "dst_ip",
+    "protocol",
+    "bytes"
     ]
 
 }
@@ -110,16 +118,16 @@ def convert_data_types(
     )
 
     if schema == "network":
-
         dataframe["dst_port"] = pd.to_numeric(
             dataframe["dst_port"],
             errors="coerce"
         )
-
+    if schema in ["network", "beacon"]:
         dataframe["bytes"] = pd.to_numeric(
             dataframe["bytes"],
             errors="coerce"
         )
+
     elif schema == "dns":
         dataframe["response_size"] = pd.to_numeric(
             dataframe["response_size"],

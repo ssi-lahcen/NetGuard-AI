@@ -34,6 +34,8 @@ NETWORK_LOG_FILE = LOGS_DIR / "network_logs.csv"
 
 AUTH_LOG_FILE = LOGS_DIR / "auth_logs.csv"
 
+BEACON_LOG_FILE = "logs/beacon_logs.csv"
+
 # Backward compatibility
 LOG_FILE = NETWORK_LOG_FILE
 
@@ -70,3 +72,12 @@ CRITICAL_ATTEMPTS = 20
 DNS_QUERY_LENGTH_THRESHOLD = 50
 
 DNS_REQUEST_THRESHOLD = 5
+
+
+# ==================================================
+# Beaconing Detection
+# ==================================================
+
+BEACON_MIN_EVENTS = 5
+
+BEACON_STD_THRESHOLD = 5
