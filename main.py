@@ -29,6 +29,10 @@ Future modules:
 - Dashboard
 ==================================================
 """
+from modules.threat_intel import (
+    detect_malicious_ips,
+)
+
 from modules.beaconing import (
     detect_beaconing,
 )
@@ -217,6 +221,9 @@ def display_brute_force_alerts(alerts):
         print(f"Last Attempt    : {alert['last_attempt']}")
         print(f"Duration        : {alert['duration_seconds']} seconds")
 
+# ==================================================
+# Display Beaconing Alerts
+# ==================================================
 
 def display_beaconing_alerts(alerts):
     """
@@ -244,6 +251,36 @@ def display_beaconing_alerts(alerts):
         print(f"Average Interval  : {alert['average_interval']} seconds")
         print(f"Std Deviation     : {alert['std_deviation']}")
         print(f"Risk Level        : {alert['risk']}")
+
+# ==================================================
+# Display Threat Intelligence Alerts
+# ==================================================
+
+def display_threat_intelligence_alerts(alerts):
+    """
+    Display Threat Intelligence alerts.
+    """
+    if not alerts:
+
+        print("No malicious IPs detected.")
+        return
+
+    for index, alert in enumerate(alerts, start=1):
+
+        print()
+        print(f"Alert #{index}")
+        print("-" * 50)
+
+        print(f"Alert Type      : {alert['alert_type']}")
+        print(f"Matched IOC     : {alert['matched_ip']}")
+        print(f"Direction       : {alert['direction']}")
+        print(f"Connections     : {alert['connections']}")
+        print(f"First Seen      : {alert['first_seen']}")
+        print(f"Last Seen       : {alert['last_seen']}")
+        print(f"Source IPs      : {', '.join(alert['source_ips'])}")
+        print(f"Destination IPs : {', '.join(alert['destination_ips'])}")
+        print(f"Threat Feed     : {alert['feed']}")
+        print(f"Risk Level      : {alert['risk']}")
 # ==================================================
 # Main
 # ==================================================
@@ -341,6 +378,23 @@ def main():
     )
     display_beaconing_alerts(
         beacon_alerts
+    )
+
+    # ------------------------------------------
+    # Threat Intelligence
+    # ------------------------------------------
+
+    print()
+    print("=" * 50)
+    print("THREAT INTELLIGENCE ANALYSIS")
+    print("=" * 50)
+
+    threat_alerts = detect_malicious_ips(
+        network_dataframe
+    )
+
+    display_threat_intelligence_alerts(
+        threat_alerts
     )
 # ==================================================
 # Program Entry
