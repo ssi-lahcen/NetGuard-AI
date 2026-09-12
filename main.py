@@ -29,6 +29,10 @@ Future modules:
 - Dashboard
 ==================================================
 """
+from modules.report import (
+    generate_report,
+    save_report,
+)
 from modules.geoip import enrich_dataframe
 
 from modules.threat_intel import (
@@ -432,6 +436,34 @@ def main():
 
     display_threat_intelligence_alerts(
         threat_alerts
+    )
+    # ------------------------------------------
+    # Security Report
+    # ------------------------------------------
+
+    print()
+    print("=" * 50)
+    print("REPORT GENERATION")
+    print("=" * 50)
+
+    report = generate_report(
+        network_profile,
+        alerts,
+        brute_force_alerts,
+        dns_alerts,
+        beacon_alerts,
+        threat_alerts
+    )
+
+    report_path = "reports/netguard_report.txt"
+
+    save_report(
+        report,
+        report_path
+    )
+
+    print(
+        f"Security report saved to: {report_path}"
     )
 # ==================================================
 # Program Entry
