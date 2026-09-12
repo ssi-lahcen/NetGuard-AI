@@ -29,6 +29,8 @@ Future modules:
 - Dashboard
 ==================================================
 """
+from modules.geoip import enrich_dataframe
+
 from modules.threat_intel import (
     detect_malicious_ips,
 )
@@ -260,6 +262,7 @@ def display_threat_intelligence_alerts(alerts):
     """
     Display Threat Intelligence alerts.
     """
+
     if not alerts:
 
         print("No malicious IPs detected.")
@@ -271,16 +274,48 @@ def display_threat_intelligence_alerts(alerts):
         print(f"Alert #{index}")
         print("-" * 50)
 
-        print(f"Alert Type      : {alert['alert_type']}")
-        print(f"Matched IOC     : {alert['matched_ip']}")
-        print(f"Direction       : {alert['direction']}")
-        print(f"Connections     : {alert['connections']}")
-        print(f"First Seen      : {alert['first_seen']}")
-        print(f"Last Seen       : {alert['last_seen']}")
-        print(f"Source IPs      : {', '.join(alert['source_ips'])}")
-        print(f"Destination IPs : {', '.join(alert['destination_ips'])}")
-        print(f"Threat Feed     : {alert['feed']}")
-        print(f"Risk Level      : {alert['risk']}")
+        print(f"Alert Type          : {alert['alert_type']}")
+        print(f"Matched IOC         : {alert['matched_ip']}")
+        print(f"Direction           : {alert['direction']}")
+        print(f"Connections         : {alert['connections']}")
+        print(f"First Seen          : {alert['first_seen']}")
+        print(f"Last Seen           : {alert['last_seen']}")
+
+        print()
+        print(
+            f"Source IPs          : "
+            f"{', '.join(alert['source_ips'])}"
+        )
+
+        print(
+            f"Source Countries    : "
+            f"{', '.join(alert['source_countries'])}"
+        )
+
+        print(
+            f"Source Cities       : "
+            f"{', '.join(alert['source_cities'])}"
+        )
+
+        print()
+        print(
+            f"Destination IPs     : "
+            f"{', '.join(alert['destination_ips'])}"
+        )
+
+        print(
+            f"Destination Countries: "
+            f"{', '.join(alert['destination_countries'])}"
+        )
+
+        print(
+            f"Destination Cities  : "
+            f"{', '.join(alert['destination_cities'])}"
+        )
+
+        print()
+        print(f"Threat Feed         : {alert['feed']}")
+        print(f"Risk Level          : {alert['risk']}")
 # ==================================================
 # Main
 # ==================================================
@@ -302,8 +337,10 @@ def main():
     NETWORK_LOG_FILE,
     schema="network"
     )
+    network_dataframe = enrich_dataframe(
+    network_dataframe
+    )
     print("\nLogs loaded successfully.")
-
     # ------------------------------------------
     # Statistics
     # ------------------------------------------
