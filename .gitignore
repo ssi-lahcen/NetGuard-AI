@@ -1,4 +1,15 @@
 venv/
 __pycache__/
 *.pyc
+
 reports/
+
+# Machine Learning datasets
+datasets/UNSW-NB-training-&-testing.zip
+datasets/unsw_nb15/
+
+# Generated ML models
+machine_learning/*.joblib
+
+# PCAP test captures
+logs/*.pcap
