@@ -69,7 +69,8 @@ SCHEMAS = {
 
 def validate_columns(
     dataframe: pd.DataFrame,
-    schema: str
+    schema: str,
+    verbose: bool = True
 ) -> None:
     """
     Verify that all required columns exist.
@@ -97,7 +98,8 @@ def validate_columns(
             f"Missing required columns: {missing_columns}"
         )
 
-    print("Column validation successful.")
+    if verbose:
+        print("Column validation successful.")
 
 
 # ==================================================
@@ -132,8 +134,7 @@ def convert_data_types(
         dataframe["response_size"] = pd.to_numeric(
             dataframe["response_size"],
             errors="coerce"
-        )
-
+            )
     return dataframe
 
 
@@ -143,7 +144,8 @@ def convert_data_types(
 
 def remove_invalid_rows(
     dataframe: pd.DataFrame,
-    schema: str
+    schema: str,
+    verbose: bool = True
 ) -> pd.DataFrame:
     """
     Remove rows containing invalid values.
@@ -179,9 +181,10 @@ def remove_invalid_rows(
 
     removed = before - len(dataframe)
 
-    print(
-        f"Removed {removed} invalid rows."
-    )
+    if verbose:
+        print(
+            f"Removed {removed} invalid rows."
+        )
 
     return dataframe
 
@@ -192,7 +195,8 @@ def remove_invalid_rows(
 
 def parse_logs(
     log_file: str,
-    schema: str = "network"
+    schema: str = "network",
+    verbose: bool = True
 ) -> pd.DataFrame:
     """
     Read, validate, clean, and return a log file.
@@ -223,7 +227,8 @@ def parse_logs(
 
     validate_columns(
         dataframe,
-        schema
+        schema,
+        verbose
     )
 
     dataframe = convert_data_types(
@@ -233,7 +238,8 @@ def parse_logs(
 
     dataframe = remove_invalid_rows(
         dataframe,
-        schema
+        schema,
+        verbose
     )
 
     return dataframe
