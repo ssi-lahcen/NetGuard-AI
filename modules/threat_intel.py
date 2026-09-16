@@ -14,9 +14,9 @@ from pathlib import Path
 
 import pandas as pd
 
-from config import (
-    DATA_DIR,
-)
+from config import DATA_DIR
+from modules.geoip import enrich_ip
+
 
 # ==================================================
 # Load Malicious IP Database
@@ -43,6 +43,7 @@ def load_malicious_ips() -> set:
 
     return malicious_ips
 
+
 # ==================================================
 # Load Whitelist
 # ==================================================
@@ -68,6 +69,7 @@ def load_whitelist() -> set:
 
     return whitelist
 
+
 # ==================================================
 # Risk Classification
 # ==================================================
@@ -80,9 +82,11 @@ def classify_risk(
     """
 
     if malicious:
+
         return "HIGH"
 
     return "LOW"
+
 
 # ==================================================
 # Threat Intelligence Detection
@@ -92,7 +96,8 @@ def detect_malicious_ips(
     dataframe: pd.DataFrame
 ) -> list:
     """
-    Detect communication with known malicious IPs.
+    Detect communication with known malicious IPs
+    and enrich the resulting alerts with GeoIP data.
     """
 
     malicious_ips = load_malicious_ips()
@@ -107,7 +112,9 @@ def detect_malicious_ips(
 
         dst_ip = row["dst_ip"]
 
+        # --------------------------------------------------
         # Ignore trusted systems
+        # --------------------------------------------------
 
         if src_ip in whitelist:
 
@@ -117,15 +124,27 @@ def detect_malicious_ips(
 
             continue
 
+        # --------------------------------------------------
+        # Check source and destination IPs
+        # --------------------------------------------------
+
         for matched_ip, direction in [
             (src_ip, "SOURCE"),
             (dst_ip, "DESTINATION")
         ]:
+
             if matched_ip not in malicious_ips:
+
                 continue
 
+            # --------------------------------------------------
+            # Create alert
+            # --------------------------------------------------
+
             if matched_ip not in alerts:
+
                 alerts[matched_ip] = {
+
                     "alert_type": "MALICIOUS_IP",
 
                     "matched_ip": matched_ip,
@@ -146,7 +165,12 @@ def detect_malicious_ips(
 
                     "risk": classify_risk(True)
                 }
+
             alert = alerts[matched_ip]
+
+            # --------------------------------------------------
+            # Update alert
+            # --------------------------------------------------
 
             alert["connections"] += 1
 
@@ -155,9 +179,10 @@ def detect_malicious_ips(
             alert["source_ips"].add(src_ip)
 
             alert["destination_ips"].add(dst_ip)
-# ==================================================
-# Convert sets to lists
-# ==================================================
+
+    # ==================================================
+    # GeoIP Enrichment + Set Conversion
+    # ==================================================
 
     for alert in alerts.values():
 
@@ -168,7 +193,65 @@ def detect_malicious_ips(
         alert["destination_ips"] = sorted(
             alert["destination_ips"]
         )
+
+        # --------------------------------------------------
+        # Source GeoIP information
+        # --------------------------------------------------
+
+        source_countries = set()
+
+        source_cities = set()
+
+        for ip in alert["source_ips"]:
+
+            geoip = enrich_ip(ip)
+
+            source_countries.add(
+                geoip["country"]
+            )
+
+            source_cities.add(
+                geoip["city"]
+            )
+
+        alert["source_countries"] = sorted(
+            source_countries
+        )
+
+        alert["source_cities"] = sorted(
+            source_cities
+        )
+
+        # --------------------------------------------------
+        # Destination GeoIP information
+        # --------------------------------------------------
+
+        destination_countries = set()
+
+        destination_cities = set()
+
+        for ip in alert["destination_ips"]:
+
+            geoip = enrich_ip(ip)
+
+            destination_countries.add(
+                geoip["country"]
+            )
+
+            destination_cities.add(
+                geoip["city"]
+            )
+
+        alert["destination_countries"] = sorted(
+            destination_countries
+        )
+
+        alert["destination_cities"] = sorted(
+            destination_cities
+        )
+
     return list(alerts.values())
+
 
 # ==================================================
 # Temporary Test
@@ -187,4 +270,3 @@ if __name__ == "__main__":
 
     print("Whitelist")
     print(whitelist)
-
