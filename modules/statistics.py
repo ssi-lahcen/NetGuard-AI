@@ -1,130 +1,80 @@
-"""
-statistics.py
+"""Network statistics and behavior profile helpers."""
 
-Responsible for analyzing
-network log statistics.
-"""
+from __future__ import annotations
 
 import pandas as pd
 
 
-def calculate_basic_statistics(dataframe):
-    """
-    Calculate basic network statistics.
+def _require_limit(limit: int) -> None:
+    if isinstance(limit, bool) or not isinstance(limit, int) or limit < 1:
+        raise ValueError("limit must be a positive integer")
 
-    Args:
-        dataframe (pandas.DataFrame):
-            Clean network logs.
 
-    Returns:
-        dict: Basic network statistics.
-    """
+def calculate_basic_statistics(dataframe: pd.DataFrame) -> dict[str, int]:
+    """Calculate basic network statistics."""
 
-    statistics = {
-        "total_events": len(dataframe),
-        "unique_source_ips": dataframe["src_ip"].nunique(),
-        "unique_destination_ips": dataframe[
-            "dst_ip"
-        ].nunique(),
-        "unique_ports": dataframe["dst_port"].nunique(),
-        "unique_protocols": dataframe[
-            "protocol"
-        ].nunique(),
-        "total_bytes": dataframe["bytes"].sum(),
+    if dataframe.empty:
+        return {
+            "total_events": 0,
+            "unique_source_ips": 0,
+            "unique_destination_ips": 0,
+            "unique_ports": 0,
+            "unique_protocols": 0,
+            "total_bytes": 0,
+        }
+
+    return {
+        "total_events": int(len(dataframe)),
+        "unique_source_ips": int(dataframe["src_ip"].nunique()),
+        "unique_destination_ips": int(dataframe["dst_ip"].nunique()),
+        "unique_ports": int(dataframe["dst_port"].nunique()),
+        "unique_protocols": int(dataframe["protocol"].nunique()),
+        "total_bytes": int(dataframe["bytes"].sum()),
     }
 
-    return statistics
+
+def get_top_talkers(dataframe: pd.DataFrame, limit: int = 5) -> pd.Series:
+    """Identify the most active source IP addresses."""
+
+    _require_limit(limit)
+    if dataframe.empty:
+        return pd.Series(dtype="int64")
+    return dataframe["src_ip"].value_counts().head(limit)
 
 
-def get_top_talkers(dataframe, limit=5):
-    """
-    Identify the most active source IPs.
+def get_top_destination_ports(dataframe: pd.DataFrame, limit: int = 5) -> pd.Series:
+    """Identify the most frequently used destination ports."""
 
-    Args:
-        dataframe (pandas.DataFrame):
-            Clean network logs.
+    _require_limit(limit)
+    if dataframe.empty:
+        return pd.Series(dtype="int64")
+    return dataframe["dst_port"].value_counts().head(limit)
 
-        limit (int):
-            Number of top IPs to return.
 
-    Returns:
-        pandas.Series: Top source IPs.
-    """
+def get_protocol_distribution(dataframe: pd.DataFrame) -> pd.Series:
+    """Calculate protocol event counts."""
 
-    top_talkers = (
-        dataframe["src_ip"]
-        .value_counts()
-        .head(limit)
-    )
+    if dataframe.empty:
+        return pd.Series(dtype="int64")
+    return dataframe["protocol"].value_counts()
 
-    return top_talkers
-def get_top_destination_ports(dataframe, limit=5):
-    """
-    Identify the most frequently accessed
-    destination ports.
 
-    Args:
-        dataframe (pandas.DataFrame):
-            Clean network logs.
+def get_action_distribution(dataframe: pd.DataFrame) -> pd.Series:
+    """Calculate allowed and denied action event counts."""
 
-        limit (int):
-            Number of top ports to return.
+    if dataframe.empty:
+        return pd.Series(dtype="int64")
+    return dataframe["action"].value_counts()
 
-    Returns:
-        pandas.Series: Top destination ports.
-    """
 
-    top_ports = (
-        dataframe["dst_port"]
-        .value_counts()
-        .head(limit)
-    )
+def build_network_profile(dataframe: pd.DataFrame, limit: int = 5) -> dict:
+    """Build a complete network behavior profile."""
 
-    return top_ports
-
-def get_protocol_distribution(dataframe):
-    """
-    Calculate the distribution of network protocols.
-
-    Args:
-        dataframe (pandas.DataFrame):
-            Clean network logs.
-
-    Returns:
-        pandas.Series: Protocol event counts.
-    """
-
-    protocol_distribution = (
-        dataframe["protocol"]
-        .value_counts()
-    )
-
-    return protocol_distribution
-def build_network_profile(dataframe):
-    """
-    Build a complete network behavior profile.
-
-    Args:
-        dataframe (pandas.DataFrame):
-            Clean network logs.
-
-    Returns:
-        dict: Complete network profile.
-    """
-
-    network_profile = {
-        "basic_statistics": (
-            calculate_basic_statistics(dataframe)
-        ),
-        "top_talkers": (
-            get_top_talkers(dataframe)
-        ),
-        "top_ports": (
-            get_top_destination_ports(dataframe)
-        ),
-        "protocol_distribution": (
-            get_protocol_distribution(dataframe)
-        ),
+    _require_limit(limit)
+    return {
+        "basic_statistics": calculate_basic_statistics(dataframe),
+        "top_talkers": get_top_talkers(dataframe, limit),
+        "top_ports": get_top_destination_ports(dataframe, limit),
+        "protocol_distribution": get_protocol_distribution(dataframe),
+        "action_distribution": get_action_distribution(dataframe),
     }
-
-    return network_profile
